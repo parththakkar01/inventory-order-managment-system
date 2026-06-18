@@ -5,8 +5,8 @@ import { Providers } from "@/app/providers";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
-  title: "Inventory & Orders",
-  description: "Plastic material inventory and order management"
+  title: "Reseptionist",
+  description: "inventory and order management system"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
