@@ -1,0 +1,263 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum Currency {
+  INR
+  USD
+  EUR
+  GBP
+  AED
+  SGD
+  CNY
+  JPY
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  PARTIAL
+}
+
+enum StockAdjustmentType {
+  DAMAGE
+  RETURN
+  CORRECTION
+  OTHER
+}
+
+enum StockMovementType {
+  IMPORT
+  SALE
+  ADJUSTMENT
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          Role      @default(STAFF)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  authenticators Authenticator[]
+  imports        ImportBatch[]     @relation("ImportCreatedBy")
+  sales          Sale[]            @relation("SaleCreatedBy")
+  adjustments    StockAdjustment[] @relation("AdjustmentCreatedBy")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model Authenticator {
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialID])
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  country   String
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  imports ImportBatch[]
+}
+
+model Buyer {
+  id        String   @id @default(cuid())
+  name      String
+  gstin     String?  @unique
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales Sale[]
+}
+
+model Material {
+  id             String   @id @default(cuid())
+  type           String
+  grade          String
+  description    String?
+  minimumStockKg Decimal  @default(0) @db.Decimal(14, 3)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  imports ImportBatch[]
+  sales   Sale[]
+
+  @@unique([type, grade])
+}
+
+model ImportBatch {
+  id                String   @id @default(cuid())
+  batchCode         String   @unique
+  materialId        String
+  supplierId        String
+  createdById       String?
+  quantityKg        Decimal  @db.Decimal(14, 3)
+  remainingKg       Decimal  @db.Decimal(14, 3)
+  countryOfOrigin   String
+  purchaseUnitPrice Decimal  @db.Decimal(14, 2)
+  purchaseTotal     Decimal  @db.Decimal(14, 2)
+  currency          Currency
+  importDate        DateTime
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  material       Material          @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  supplier       Supplier          @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  createdBy      User?             @relation("ImportCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  saleLines      SaleLine[]
+  stockMovements StockMovement[]
+  adjustments    StockAdjustment[]
+}
+
+model Sale {
+  id            String        @id @default(cuid())
+  saleNumber    Int           @unique @default(autoincrement())
+  buyerId       String
+  materialId    String
+  createdById   String?
+  saleDate      DateTime
+  paymentStatus PaymentStatus @default(PENDING)
+  currency      Currency      @default(INR)
+  subtotal      Decimal       @db.Decimal(14, 2)
+  gstRate       Decimal       @default(18) @db.Decimal(5, 2)
+  gstAmount     Decimal       @db.Decimal(14, 2)
+  totalAmount   Decimal       @db.Decimal(14, 2)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  buyer          Buyer           @relation(fields: [buyerId], references: [id], onDelete: Restrict)
+  material       Material        @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  createdBy      User?           @relation("SaleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  lines          SaleLine[]
+  invoice        Invoice?
+  stockMovements StockMovement[]
+}
+
+model SaleLine {
+  id            String  @id @default(cuid())
+  saleId        String
+  importBatchId String
+  quantityKg    Decimal @db.Decimal(14, 3)
+  saleUnitPrice Decimal @db.Decimal(14, 2)
+  lineTotal     Decimal @db.Decimal(14, 2)
+
+  sale        Sale        @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  importBatch ImportBatch @relation(fields: [importBatchId], references: [id], onDelete: Restrict)
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  invoiceNumber Int      @unique @default(autoincrement())
+  saleId        String   @unique
+  pdfUrl        String?
+  issuedAt      DateTime @default(now())
+  companyName   String
+  companyGstin  String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+}
+
+model StockAdjustment {
+  id            String              @id @default(cuid())
+  importBatchId String
+  createdById   String?
+  type          StockAdjustmentType
+  quantityKg    Decimal             @db.Decimal(14, 3)
+  reason        String
+  createdAt     DateTime            @default(now())
+
+  importBatch   ImportBatch    @relation(fields: [importBatchId], references: [id], onDelete: Restrict)
+  createdBy     User?          @relation("AdjustmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  stockMovement StockMovement?
+}
+
+model StockMovement {
+  id                String            @id @default(cuid())
+  importBatchId     String
+  saleId            String?
+  stockAdjustmentId String?           @unique
+  type              StockMovementType
+  quantityKg        Decimal           @db.Decimal(14, 3)
+  note              String?
+  createdAt         DateTime          @default(now())
+
+  importBatch     ImportBatch      @relation(fields: [importBatchId], references: [id], onDelete: Restrict)
+  sale            Sale?            @relation(fields: [saleId], references: [id], onDelete: SetNull)
+  stockAdjustment StockAdjustment? @relation(fields: [stockAdjustmentId], references: [id], onDelete: SetNull)
+}
