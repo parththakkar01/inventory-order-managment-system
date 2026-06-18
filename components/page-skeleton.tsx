@@ -1,7 +1,7 @@
 import { AppShell } from "@/components/app-shell";
 
 function SkeletonBlock({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-2xl bg-white/10 ${className}`} />;
+  return <div className={`animate-pulse rounded-[28px] bg-white/[0.07] ${className}`} />;
 }
 
 export function PageSkeleton({ variant = "dashboard" }: { variant?: "dashboard" | "inventory" | "sales" | "invoices" | "reports" }) {

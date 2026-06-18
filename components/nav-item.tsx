@@ -63,8 +63,8 @@ export function NavItem({ href, label, icon }: { href: string; label: string; ic
   return (
     <Link
       href={href}
-      className={`flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-semibold transition md:flex-row md:justify-start md:gap-3 md:px-3 md:py-3 md:text-sm ${
-        active ? "bg-accent text-white shadow-card" : "text-muted hover:bg-white/5 hover:text-white"
+      className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-bold transition md:flex-row md:gap-2 md:px-4 md:py-2.5 md:text-sm ${
+        active ? "bg-accent-soft text-[#bba8ff]" : "text-muted hover:bg-white/[0.06] hover:text-white"
       }`}
     >
       <NavIcon name={icon} />

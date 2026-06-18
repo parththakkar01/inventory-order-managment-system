@@ -1,18 +1,22 @@
 function SkeletonBlock({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-xl bg-white/10 ${className}`} />;
+  return <div className={`animate-pulse rounded-2xl bg-white/[0.07] ${className}`} />;
 }
 
 export default function Loading() {
   return (
-    <main className="grid min-h-screen place-items-center bg-ink px-4 text-white">
-      <section className="w-full max-w-md rounded-2xl border border-white/10 bg-panel p-7 shadow-card">
-        <SkeletonBlock className="h-3 w-32 rounded-full" />
-        <SkeletonBlock className="mt-4 h-11 w-40" />
-        <div className="mt-8 space-y-4">
-          <SkeletonBlock className="h-16" />
-          <SkeletonBlock className="h-16" />
+    <main className="grid min-h-screen place-items-center bg-[#08080a] p-4 sm:p-8">
+      <section className="grid w-full max-w-5xl overflow-hidden rounded-[36px] bg-[#121216] shadow-float lg:grid-cols-2">
+        <SkeletonBlock className="hidden min-h-[680px] rounded-none bg-[#1d1b20] lg:block" />
+        <div className="flex min-h-[620px] flex-col justify-center p-7 sm:p-14">
+          <SkeletonBlock className="h-4 w-28 rounded-full" />
+          <SkeletonBlock className="mt-5 h-14 w-72" />
+          <SkeletonBlock className="mt-4 h-5 w-56" />
+          <div className="mt-9 space-y-5">
+            <SkeletonBlock className="h-20" />
+            <SkeletonBlock className="h-20" />
+          </div>
+          <SkeletonBlock className="mt-6 h-14" />
         </div>
-        <SkeletonBlock className="mt-6 h-12" />
       </section>
     </main>
   );
